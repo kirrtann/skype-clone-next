@@ -8,3 +8,8 @@ export const signup  = async(credentials:{email:string, password:string,birth_da
 export const login = async(credentials:{email:string, password:string}) => {  
   return apiHelper(axiosInstance.post('/auth/login', credentials));
 }
+
+export const otpvaarify = async(credentials:{email:string|null, otp:string}) => {
+  return apiHelper(axiosInstance.post('/auth/verifyotp', credentials)); 
+
+}

@@ -7,15 +7,16 @@ import "react-toastify/dist/ReactToastify.css";
 import { signup } from "@/api/servierce/auth";
 import Link from "next/link";
 
+
 export default function SignUp() {
   const router = useRouter();
-  
+
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     name: "",
     birth_date: "",
-    otp: ""
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -30,25 +31,27 @@ export default function SignUp() {
         email: formData.email,
         password: formData.password,
         name: formData.name,
-        birth_date: new Date(formData.birth_date)
+        birth_date: new Date(formData.birth_date),
       };
 
       const response = await signup(credentials);
-      localStorage.setItem("token", response.data.token);
-      toast.success(response.message || "Signup successful!");
+      console.log("Signup Response:", response); // Debugging Line
 
-      setTimeout(() => {
-        router.push("/"); 
-      }, 1000);
-      
+      // Store email in localStorage for OTP verification
+      localStorage.setItem("email", credentials.email);
+
+      // Redirect to OTP page
+      router.push("/otpvarify");
+
+      toast.success(response.message || "Signup successful!");
     } catch (error: any) {
+      console.error("Signup Error:", error); // Debugging Line
       toast.error(error.response?.data?.message || "Signup failed. Please try again.");
     }
   };
-
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <ToastContainer /> 
+      <ToastContainer />
       <div className="w-full max-w-md bg-white shadow-lg rounded-2xl p-8">
         <h2 className="text-2xl font-semibold text-center text-gray-800 mb-6">Sign Up</h2>
         <form className="space-y-4" onSubmit={handleSubmit}>
