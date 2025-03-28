@@ -22,14 +22,21 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await login(formData); 
+      const response = await login(formData);
+      
+      if (!response.data || !response.data.token) {
+        throw new Error("Invalid login credentials");
+      }
+      
       localStorage.setItem("token", response.data.token);
+      localStorage.setItem("name", response.data.name);
+      localStorage.setItem("UserId", response.data.id);
 
       toast.success("Login successful!", {
         onClose: () => router.push("/"), 
       });
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Login failed. Please try again.");
+      toast.error(error.response?.data?.message || "Invalid email or password");
     }
   };
 
@@ -46,6 +53,9 @@ export default function Login() {
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-600">Password</label>
             <input type="password" id="password" value={formData.password} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Enter your password" required />
+            <Link href="/forgot-password" className="block text-sm text-blue-600 hover:underline mt-1">
+              Forgot Password?
+            </Link>
           </div>
           <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">Login</button>
         </form>
