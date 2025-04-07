@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 
-const SERVER_URL = 'ws://192.168.5.110:3002';
+const SERVER_URL = 'ws://192.168.5.124:3002';
 
 // Move socket initialization outside component to prevent multiple instances
 let socket: Socket | null = null;
