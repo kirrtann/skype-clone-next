@@ -19,7 +19,7 @@ export default function Home() {
     <div className="flex">
       <Sidebar />
 
-    <div><ChatComponent /></div>
+    {/* <div><ChatComponent /></div> */}
 
     </div>
   </>

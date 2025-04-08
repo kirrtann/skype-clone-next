@@ -3,19 +3,21 @@
 import { useEffect, useState } from "react"
 import { Search, MessageCircle, Users } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Chat, Newcontact, SearchUser } from "@/api/servierce/chatservis"
+import { Chat,  SearchUser } from "@/api/servierce/chatservis"
+import { useRouter } from "next/navigation"
 
 interface User {
   id: string;
   contact_name: string;
   contact_email: string;
-  name? : string;
-  email? : string;
+  name?: string;
+  email?: string;
 }
 
 const getInitials = (name: string | undefined) => {
   return name ? name.charAt(0).toUpperCase() : '?';
 };
+
 
 function SkypeSidebar() {
   const [search, setSearch] = useState("")
@@ -74,17 +76,23 @@ function SkypeSidebar() {
   const filteredUsers = activeTab === "contacts"
     ? (search ? searchResults : users)
     : users.filter((user) => user.contact_name?.toLowerCase().includes(search.toLowerCase()));
+console.log(filteredUsers, "filteredUsers");
 
+const route = useRouter()
+  const navigatemeassge = (email: string) => {
+    route.push(`/messagedetail?email=${email}`)
+  }
+  const Name = localStorage.getItem("name")
   return (
     <div className="w-72 h-screen flex flex-col bg-white border-r border-gray-200">
       {/* User Profile */}
       <div className="p-3 border-t border-gray-200 flex items-center gap-3 bg-gray-50">
-        {/* <div className="w-9 h-9 bg-[#0078d4] rounded-full flex items-center justify-center text-white font-semibold">
+        <div className="w-9 h-9 bg-[#0078d4] rounded-full flex items-center justify-center text-white font-semibold">
           {Name?.charAt(0)}
-        </div> */}
-        {/* <div className="flex-1 min-w-0">
+        </div>
+        <div className="flex-1 min-w-0">
           <div className="font-medium text-gray-800 text-[20px]">{Name}</div>
-        </div> */}
+        </div>
       </div>
 
       {/* Search Bar */}
@@ -175,7 +183,8 @@ function SkypeSidebar() {
               <div className="p-4 text-center text-gray-500">No contacts found</div>
             ) : (
               filteredUsers.map((user) => (
-                <div key={user.id} className="flex items-center gap-3 p-3 hover:bg-gray-100 cursor-pointer">
+
+                <div key={user.id} onClick={() => { navigatemeassge(user.contact_email) }} className="flex items-center gap-3 p-3  hover:bg-gray-100 cursor-pointer">
                   <div className="relative">
                     <div className="w-10 h-10 bg-[#0078d4] rounded-full flex items-center justify-center text-white font-semibold">
                       {getInitials(user?.contact_name)}
@@ -187,6 +196,7 @@ function SkypeSidebar() {
                     </div>
                   </div>
                 </div>
+
               ))
             )}
           </div>
