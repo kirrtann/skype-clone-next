@@ -5,10 +5,6 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { signup } from "@/api/servierce/auth";
 import Link from "next/link";
-<<<<<<< HEAD
-import { stat } from "fs";
-=======
->>>>>>> master
 
 interface ValidationErrors {
   email?: string;
@@ -48,10 +44,6 @@ export default function SignUp() {
       newErrors.password = "Password is required";
     } else if (formData.password.length < 8) {
       newErrors.password = "Password must be at least 8 characters";
-<<<<<<< HEAD
-    } else if (!/(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9])/.test(formData.password)) {
-      newErrors.password = "Password must contain uppercase, lowercase, number and special character";
-=======
     } else if (
       !/(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9])/.test(
         formData.password
@@ -59,7 +51,6 @@ export default function SignUp() {
     ) {
       newErrors.password =
         "Password must contain uppercase, lowercase, number and special character";
->>>>>>> master
     }
 
     // Name validation
@@ -107,14 +98,9 @@ export default function SignUp() {
       if (response.status === 200) {
         router.push("/otpvarify");
       }
-<<<<<<< HEAD
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || "Signup failed. Please try again.";
-=======
     } catch (error: unknown) {
       const errorMessage =
         error.response?.data?.message || "Signup failed. Please try again.";
->>>>>>> master
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
@@ -125,12 +111,6 @@ export default function SignUp() {
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <ToastContainer />
       <div className="w-full max-w-md bg-white shadow-lg rounded-2xl p-8">
-<<<<<<< HEAD
-        <h2 className="text-2xl font-semibold text-center text-gray-800 mb-6">Sign Up</h2>
-        <form className="space-y-4" onSubmit={handleSubmit} noValidate>
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-600">Email</label>
-=======
         <h2 className="text-2xl font-semibold text-center text-gray-800 mb-6">
           Sign Up
         </h2>
@@ -142,23 +122,11 @@ export default function SignUp() {
             >
               Email
             </label>
->>>>>>> master
             <input
               type="email"
               id="email"
               value={formData.email}
               onChange={handleChange}
-<<<<<<< HEAD
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${errors.email ? 'border-red-500' : 'border-gray-300'
-                }`}
-              placeholder="Enter your email"
-            />
-            {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
-          </div>
-
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-600">Password</label>
-=======
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
                 errors.email ? "border-red-500" : "border-gray-300"
               }`}
@@ -176,23 +144,11 @@ export default function SignUp() {
             >
               Password
             </label>
->>>>>>> master
             <input
               type="password"
               id="password"
               value={formData.password}
               onChange={handleChange}
-<<<<<<< HEAD
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${errors.password ? 'border-red-500' : 'border-gray-300'
-                }`}
-              placeholder="Enter your password"
-            />
-            {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password}</p>}
-          </div>
-
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-600">Name</label>
-=======
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
                 errors.password ? "border-red-500" : "border-gray-300"
               }`}
@@ -210,23 +166,11 @@ export default function SignUp() {
             >
               Name
             </label>
->>>>>>> master
             <input
               type="text"
               id="name"
               value={formData.name}
               onChange={handleChange}
-<<<<<<< HEAD
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${errors.name ? 'border-red-500' : 'border-gray-300'
-                }`}
-              placeholder="Enter your name"
-            />
-            {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
-          </div>
-
-          <div>
-            <label htmlFor="birth_date" className="block text-sm font-medium text-gray-600">Birthday</label>
-=======
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
                 errors.name ? "border-red-500" : "border-gray-300"
               }`}
@@ -244,18 +188,11 @@ export default function SignUp() {
             >
               Birthday
             </label>
->>>>>>> master
             <input
               type="date"
               id="birth_date"
               value={formData.birth_date}
               onChange={handleChange}
-<<<<<<< HEAD
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${errors.birth_date ? 'border-red-500' : 'border-gray-300'
-                }`}
-            />
-            {errors.birth_date && <p className="mt-1 text-xs text-red-500">{errors.birth_date}</p>}
-=======
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
                 errors.birth_date ? "border-red-500" : "border-gray-300"
               }`}
@@ -263,24 +200,11 @@ export default function SignUp() {
             {errors.birth_date && (
               <p className="mt-1 text-xs text-red-500">{errors.birth_date}</p>
             )}
->>>>>>> master
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-<<<<<<< HEAD
-            className={`w-full py-2 rounded-lg transition ${isLoading
-                ? 'bg-blue-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700'
-              } text-white`}
-          >
-            {isLoading ? 'Signing up...' : 'Sign Up'}
-          </button>
-        </form>
-        <p className="mt-4 text-sm text-center text-gray-600">
-          Already have an account? <Link href="/login" className="text-blue-600 hover:underline">Sign In</Link>
-=======
             className={`w-full py-2 rounded-lg transition ${
               isLoading
                 ? "bg-blue-400 cursor-not-allowed"
@@ -295,7 +219,6 @@ export default function SignUp() {
           <Link href="/login" className="text-blue-600 hover:underline">
             Sign In
           </Link>
->>>>>>> master
         </p>
       </div>
     </div>
