@@ -1,3 +1,5 @@
+"use client";
+
 import SkypeSidebar from "../sidebar/page";
 
 export default function MessageLayout({
@@ -6,9 +8,12 @@ export default function MessageLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex w-full h-screen">
+    <div className="flex h-screen bg-gray-100">
+      {/* Sidebar */}
       <SkypeSidebar />
-      <div className="flex-1">{children}</div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col">{children}</div>
     </div>
   );
 }

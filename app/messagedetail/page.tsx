@@ -1,250 +1,199 @@
-"use client"
+"use client";
 
-import { getmeassage } from '@/api/servierce/chatservis'
-import { useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
-import SocketService from '@/services/socketService'
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { Send, Wifi, WifiOff } from "lucide-react";
+import { io, Socket } from "socket.io-client";
+import useUser from "../zustand/useUser";
 
+let socket: Socket | null = null;
 
-enum ConnectionStatus {
-  CONNECTING = 'connecting',
-  CONNECTED = 'connected',
-  DISCONNECTED = 'disconnected',
-  ERROR = 'error'
-}
+const MessageHistory = () => {
+  const searchParams = useSearchParams();
+  const { user } = useUser();
 
-interface Message {
-  id: number;
-  room_id: string;
-  sender: string;
-  message: string;
-  created_at: string;
-  sender_name: string;
-}
+  const [messages, setMessages] = useState([]);
+  const [messageInput, setMessageInput] = useState("");
+  const [isConnected, setIsConnected] = useState(false);
+  const [room, setRoom] = useState("");
 
-const Messagehistory = () => {
-  const searchParams = useSearchParams()
-  const [messages, setMessages] = useState<Message[]>([])
-  const [loading, setLoading] = useState(true)
-  const [messageInput, setMessageInput] = useState('')
-  const [room, setRoom] = useState<string | null>(null)
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(ConnectionStatus.CONNECTING)
-  const [error, setError] = useState<string | null>(null)
-  const [users, setUsers] = useState<string[]>([]);
-  const currentUserId = localStorage.getItem("UserId")
+  const currentUserId = user?.id;
+  const targetUserEmail = searchParams.get("email");
+  const targetUserName = searchParams.get("name") || targetUserEmail;
 
+  // Create room
   useEffect(() => {
-    let mounted = true;
-    const socketService = SocketService.getInstance();
+    if (currentUserId && targetUserEmail) {
+      const roomId = [currentUserId, targetUserEmail].sort().join("-");
+      setRoom(roomId);
+    }
+  }, [currentUserId, targetUserEmail]);
 
-    const initializeSocket = async () => {
-      try {
-        setConnectionStatus(ConnectionStatus.CONNECTING);
-        const socket = await socketService.connect();
+  // Socket connection - SIMPLIFIED
+  useEffect(() => {
+    if (!currentUserId || !room) return;
 
-        if (!mounted) return;
+    // Clean up existing
+    if (socket) {
+      socket.disconnect();
+      socket = null;
+    }
 
-        // Handle initial connection
-        socket.on('connect', () => {
-          console.log('Socket connected');
-          setConnectionStatus(ConnectionStatus.CONNECTED);
-          setError(null);
-        });
+    // Create new connection
+    socket = io("http://192.168.5.104:3002", {
+      query: { userId: currentUserId },
+      transports: ["polling", "websocket"], // Try polling first
+      forceNew: true,
+    });
 
-        // Join room once connected
-        const targetUserId = searchParams.get('email');
-        if (targetUserId && currentUserId && socket.connected) {
-          const roomId = [currentUserId, targetUserId].sort().join('-');
-          console.log('Attempting to join room:', roomId);
-          socket.emit('join-room', roomId);
-        }
+    // Connection events
+    socket.on("connect", () => {
+      setIsConnected(true);
+      socket?.emit("join-room", room);
+    });
 
-        // Handle room joined confirmation
-        socket.on('room-joined', (data) => {
-          console.log('Successfully joined room:', data);
-          setRoom(data.roomId);
-          if (data.users) {
-            setUsers(data.users);
-          }
-        });
+    socket.on("disconnect", () => {
+      setIsConnected(false);
+    });
 
-        // Handle user updates in room
-        socket.on('user-update', (data) => {
-          console.log('Users update:', data);
-          setUsers(data.users);
-        });
+    socket.on("connect_error", (error) => {
+      console.error("❌ Connection failed:", error);
+      setIsConnected(false);
+    });
 
-        // Handle private messages
-        socket.on('private-message', (data) => {
-          console.log('Received message:', data);
-          setMessages(prev => [...prev, {
+    socket.on("room-joined", (data) => {
+      console.log(" Room joined:", data);
+    });
+
+    socket.on("new-message", (data) => {
+      if (data.sender !== currentUserId) {
+        setMessages((prev) => [
+          ...prev,
+          {
             id: Date.now(),
-            room_id: data.room,
-            sender: data.userId,
-            message: data.text,
-            created_at: new Date().toISOString(),
-            sender_name: data.userId === currentUserId ? 'You' : 'Other'
-          }]);
-        });
-
-        socket.on('error', (error) => {
-          console.error('Socket error:', error);
-          setError(error.message);
-        });
-
-      } catch (error: any) {
-        if (!mounted) return;
-        setConnectionStatus(ConnectionStatus.ERROR);
-        setError(error.message || 'Failed to establish connection');
+            sender: data.sender,
+            message: data.message,
+            timestamp: data.timestamp || new Date().toISOString(),
+          },
+        ]);
       }
-    };
-
-    initializeSocket();
+    });
 
     return () => {
-      mounted = false;
-      socketService.disconnect();
-    };
-  }, [searchParams, currentUserId]);
-
-  useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        const credentials = {
-          otherUserEmail: searchParams.get('email'),
-          UserId: localStorage.getItem("UserId"),
-        };
-
-        const response = await getmeassage(credentials)
-        if (response?.data) {
-          setMessages(response.data)
-        }
-      } catch (error) {
-        console.error("Error fetching messages:", error)
-      } finally {
-        setLoading(false)
+      if (socket) {
+        socket.disconnect();
+        socket = null;
       }
-    }
+    };
+  }, [currentUserId, room]);
 
-    fetchMessages()
-    const interval = setInterval(fetchMessages, 5000)
-    return () => clearInterval(interval)
-  }, [searchParams])
+  // Send message
+  const sendMessage = () => {
+    if (!messageInput.trim() || !socket?.connected) return;
 
-  const handleSendMessage = async () => {
-    if (!messageInput.trim() || !room) return;
-    
-    const socketService = SocketService.getInstance();
-    const socket = socketService.getSocket();
-    
-    if (!socket) {
-      setError('Socket connection not available');
-      return;
-    }
+    const message = {
+      id: Date.now(),
+      sender: currentUserId,
+      message: messageInput,
+      timestamp: new Date().toISOString(),
+    };
 
-    try {
-      socket.emit('private-message', {
-        room,
-        message: messageInput,
-      }, (acknowledgement: any) => {
-        if (acknowledgement?.error) {
-          console.error('Message send error:', acknowledgement.error);
-          setError(acknowledgement.error);
-        } else {
-          console.log('Message sent successfully');
-          setMessageInput('');
-        }
-      });
-    } catch (error) {
-      console.error("Error sending message:", error);
-      setError('Failed to send message');
-    }
+    // Add to UI immediately
+    setMessages((prev) => [...prev, message]);
+
+    // Send to server
+    socket.emit("send-message", {
+      room: room,
+      message: messageInput,
+    });
+
+    setMessageInput("");
   };
 
-  if (connectionStatus === ConnectionStatus.ERROR || error) {
-    return (
-      <div className="flex-1 flex items-center justify-center text-red-500">
-        {error || 'Connection error occurred'}
-      </div>
-    )
-  }
-
-  if (loading) return <div className="flex-1 flex items-center justify-center">Loading...</div>
-
   return (
-    <div className="flex flex-col h-screen">
-      {/* Add users list */}
-      <div className="bg-gray-100 p-4 border-b">
-        <h3 className="text-sm font-medium text-gray-600">Users in Room:</h3>
-        <div className="flex flex-wrap gap-2 mt-1">
-          {users.map((user, index) => (
-            <span key={index} className="px-2 py-1 bg-white rounded-full text-xs shadow-sm">
-              {user}
-            </span>
-          ))}
+    <div className="flex flex-col h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b p-4 flex items-center gap-3">
+        <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+          <span className="text-white font-semibold">
+            {targetUserName?.charAt(0).toUpperCase()}
+          </span>
+        </div>
+        <div>
+          <h2 className="font-semibold">{targetUserName}</h2>
+          <div className="flex items-center gap-2 text-sm">
+            {isConnected ? (
+              <>
+                <Wifi className="w-4 h-4 text-green-500" />
+                <span className="text-green-600">Connected</span>
+              </>
+            ) : (
+              <>
+                <WifiOff className="w-4 h-4 text-red-500" />
+                <span className="text-red-600">Connecting...</span>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
-        {messages.map((message) => (
-          <>
-          <div> 
-            
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4">
+        {messages.length === 0 ? (
+          <div className="text-center text-gray-500 mt-10">
+            <h3 className="text-lg mb-2">Start your conversation</h3>
+            <p>Send a message to {targetUserName}</p>
           </div>
-          <div
-            key={message.id}
-            className={`flex mb-4 ${
-              message.sender === currentUserId ? 'justify-end' : 'justify-start'
-            }`}
-          >
+        ) : (
+          messages.map((msg) => (
             <div
-              className={`max-w-[70%] p-3 rounded-lg ${
-                message.sender === currentUserId
-                  ? 'bg-[#0078d4] text-white rounded-br-none'
-                  : 'bg-white text-gray-800 rounded-bl-none shadow'
+              key={msg.id}
+              className={`mb-4 flex ${
+                msg.sender === currentUserId ? "justify-end" : "justify-start"
               }`}
             >
-              {message.sender !== currentUserId && (
-                <div className="text-xs font-medium mb-1 text-gray-500">
-                  {message.sender_name}
-                </div>
-              )}
-              <p className="text-sm">{message.message}</p>
-              <span className="text-xs mt-1 block opacity-70">
-                {new Date(message.created_at).toLocaleTimeString()}
-              </span>
+              <div
+                className={`max-w-xs p-3 rounded-lg ${
+                  msg.sender === currentUserId
+                    ? "bg-blue-500 text-white"
+                    : "bg-white border shadow-sm"
+                }`}
+              >
+                <p className="text-sm">{msg.message}</p>
+                <span className="text-xs opacity-70 block mt-1">
+                  {new Date(msg.timestamp).toLocaleTimeString()}
+                </span>
+              </div>
             </div>
-          </div>
-          </>
-        ))}
-
-        {messages.length === 0 && (
-          <div className="flex items-center justify-center h-full text-gray-500">
-            No messages yet
-          </div>
+          ))
         )}
       </div>
 
-      <div className="p-4 border-t border-gray-200 bg-white">
-        <div className="flex items-center gap-2">
+      {/* Input */}
+      <div className="p-4 border-t bg-white">
+        <div className="flex gap-2">
           <input
             type="text"
             value={messageInput}
             onChange={(e) => setMessageInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-            placeholder="Type a message"
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#0078d4]"
+            onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+            placeholder="Type a message..."
+            className="flex-1 px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <button 
-            onClick={handleSendMessage}
-            className="px-4 py-2 bg-[#0078d4] text-white rounded-full hover:bg-[#006abc]"
+          <button
+            onClick={sendMessage}
+            disabled={!messageInput.trim() || !isConnected}
+            className="px-6 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:opacity-50"
           >
-            Send
+            <Send className="w-4 h-4" />
           </button>
         </div>
+        <p className="text-xs text-center mt-2 text-gray-500">
+          {isConnected ? "Press Enter to send" : "Connecting..."}
+        </p>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Messagehistory
+export default MessageHistory;

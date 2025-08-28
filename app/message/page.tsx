@@ -98,7 +98,7 @@
 //     }
 //     if (message.trim() !== "" && room !== "") {
 //       socket?.emit("private-message", { room, message });
-  
+
 //       setMessage(""); // Clear input field after sending
 //     }
 //   };
