@@ -13,28 +13,23 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
   const pathname = usePathname();
   const { user } = useUser();
 
-  // Public routes that don't require authentication
   const publicRoutes = ["/login", "/signup", "/forgot-password ", "/otpvarify"];
   const isPublicRoute = publicRoutes.includes(pathname);
 
   useEffect(() => {
-    // Only run auth check after component mounts (client-side)
     const checkAuth = () => {
       const hasToken = user?.token && user.token.trim() !== "";
 
       if (!hasToken && !isPublicRoute) {
-        // User is not authenticated and trying to access protected route
         router.push("/login");
       } else if (hasToken && pathname === "/login") {
-        // User is authenticated but on login page, redirect to dashboard
-        router.push("/"); // or your main app route
+        router.push("/");
       }
     };
 
     checkAuth();
   }, [user?.token, pathname, router, isPublicRoute]);
 
-  // Show loading or nothing while redirecting
   if (!user?.token && !isPublicRoute) {
     return (
       <div className="flex items-center justify-center min-h-screen">

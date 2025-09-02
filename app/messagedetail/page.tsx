@@ -5,51 +5,63 @@ import { useSearchParams } from "next/navigation";
 import { Send, Wifi, WifiOff } from "lucide-react";
 import { io, Socket } from "socket.io-client";
 import useUser from "../zustand/useUser";
+import { useMessageDetailStore } from "../zustand/MessageUser";
 
 let socket: Socket | null = null;
+
+interface MessageDetail {
+  id: string | number;
+  sender: string;
+  receiver?: string;
+  timestamp?: string | number;
+  message?: string;
+}
 
 const MessageHistory = () => {
   const searchParams = useSearchParams();
   const { user } = useUser();
+  const { selectedUser } = useMessageDetailStore();
 
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<MessageDetail[]>([]);
   const [messageInput, setMessageInput] = useState("");
   const [isConnected, setIsConnected] = useState(false);
   const [room, setRoom] = useState("");
 
   const currentUserId = user?.id;
-  const targetUserEmail = searchParams.get("email");
-  const targetUserName = searchParams.get("name") || targetUserEmail;
+  const targetUserId = searchParams.get("id");
+  const targetUserName = selectedUser?.name || targetUserId || "Unknown";
 
-  // Create room
   useEffect(() => {
-    if (currentUserId && targetUserEmail) {
-      const roomId = [currentUserId, targetUserEmail].sort().join("-");
+    if (currentUserId && targetUserId) {
+      const roomId = [currentUserId, targetUserId].sort().join("-");
       setRoom(roomId);
     }
-  }, [currentUserId, targetUserEmail]);
+  }, [currentUserId, targetUserId]);
 
-  // Socket connection - SIMPLIFIED
   useEffect(() => {
     if (!currentUserId || !room) return;
 
-    // Clean up existing
     if (socket) {
       socket.disconnect();
       socket = null;
     }
 
-    // Create new connection
     socket = io("http://192.168.5.104:3002", {
-      query: { userId: currentUserId },
-      transports: ["polling", "websocket"], // Try polling first
+      query: {
+        userId: currentUserId,
+        receiverId: targetUserId,
+      },
+      transports: ["polling", "websocket"],
       forceNew: true,
     });
 
-    // Connection events
     socket.on("connect", () => {
       setIsConnected(true);
-      socket?.emit("join-room", room);
+      socket?.emit("join-room", {
+        room,
+        receiverId: targetUserId,
+        senderId: currentUserId,
+      });
     });
 
     socket.on("disconnect", () => {
@@ -57,12 +69,12 @@ const MessageHistory = () => {
     });
 
     socket.on("connect_error", (error) => {
-      console.error("❌ Connection failed:", error);
+      console.error("Connection failed:", error);
       setIsConnected(false);
     });
 
     socket.on("room-joined", (data) => {
-      console.log(" Room joined:", data);
+      console.log("Room joined:", data);
     });
 
     socket.on("new-message", (data) => {
@@ -85,26 +97,25 @@ const MessageHistory = () => {
         socket = null;
       }
     };
-  }, [currentUserId, room]);
+  }, [currentUserId, room, targetUserId]);
 
-  // Send message
   const sendMessage = () => {
     if (!messageInput.trim() || !socket?.connected) return;
 
-    const message = {
+    const message: MessageDetail = {
       id: Date.now(),
-      sender: currentUserId,
+      sender: currentUserId!,
       message: messageInput,
       timestamp: new Date().toISOString(),
     };
 
-    // Add to UI immediately
     setMessages((prev) => [...prev, message]);
 
-    // Send to server
     socket.emit("send-message", {
-      room: room,
+      room,
       message: messageInput,
+      receiverId: targetUserId,
+      senderId: currentUserId,
     });
 
     setMessageInput("");
@@ -161,7 +172,7 @@ const MessageHistory = () => {
               >
                 <p className="text-sm">{msg.message}</p>
                 <span className="text-xs opacity-70 block mt-1">
-                  {new Date(msg.timestamp).toLocaleTimeString()}
+                  {new Date(msg.timestamp!).toLocaleTimeString()}
                 </span>
               </div>
             </div>

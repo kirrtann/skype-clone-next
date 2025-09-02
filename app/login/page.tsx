@@ -14,20 +14,9 @@ interface LoginFormData {
   password: string;
 }
 
-interface LoginResponse {
-  data?: {
-    status: number;
-    data?: {
-      user?: { id: string };
-      name: string;
-      token: string;
-    };
-  };
-}
-
 export default function Login() {
   const router = useRouter();
-  const { user, setUser } = useUser(); // ✅ Get user from store
+  const { user, setUser } = useUser();
 
   const [formData, setFormData] = useState<LoginFormData>({
     email: "",
@@ -38,17 +27,15 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Partial<LoginFormData>>({});
 
-  // ✅ Fix: Check authentication status properly
   const isAuthenticated = () => {
     return !!(user?.token && user.token.trim() !== "");
   };
 
-  // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated()) {
       router.push("/");
     }
-  }, [user, router]); // ✅ Add user to dependencies
+  }, []);
 
   const validateForm = (): boolean => {
     const newErrors: Partial<LoginFormData> = {};
@@ -56,7 +43,6 @@ export default function Login() {
     if (!formData.email) {
       newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      // ✅ Fix regex escaping
       newErrors.email = "Please enter a valid email";
     }
 
@@ -74,7 +60,6 @@ export default function Login() {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
 
-    // Clear error when user starts typing
     if (errors[id as keyof LoginFormData]) {
       setErrors((prev) => ({ ...prev, [id]: undefined }));
     }
@@ -82,48 +67,26 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!validateForm()) {
       return;
     }
-
     setIsLoading(true);
-
     try {
-      const response: LoginResponse = await login(formData);
+      const response = await login(formData);
 
-      // Handle multiple response formats
-      const isSuccess =
-        response?.data?.status === 1 ||
-        response?.status === 1 ||
-        response?.data?.success === true;
-
-      const userData = response?.data?.data || response?.data || response;
-
-      if (isSuccess && userData) {
+      if (response?.status === 1) {
         const user = {
-          id: userData?.user?.id || userData?.id || "",
-          name: userData?.name || userData?.user?.name || "",
-          token: userData?.token || userData?.token || "",
+          id: response?.data?.id,
+          name: response?.data?.name,
+          token: response?.data?.token,
         };
-
-        // Validate essential data exists
-        if (user.token && user.id) {
-          setUser(user);
-          localStorage.setItem("name", user.name || "");
-          localStorage.setItem("token", user.token);
-          localStorage.setItem("authToken", user.token);
-          toast.success("Welcome back! Login successful.", {
-            position: "top-right",
-            autoClose: 2000,
-          });
-
-          setTimeout(() => {
-            router.push("/");
-          }, 1000);
-        } else {
-          throw new Error("Missing essential user data in response");
-        }
+        setUser(user);
+        localStorage.setItem("name", user.name || "");
+        localStorage.setItem("token", user.token);
+        localStorage.setItem("UserId", user.id);
+        setTimeout(() => {
+          router.push("/");
+        }, 1000);
       } else {
         throw new Error("Login failed - invalid credentials");
       }
@@ -163,7 +126,6 @@ export default function Login() {
       />
 
       <div className="w-full max-w-md">
-        {/* Header Section */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
             <svg
@@ -184,10 +146,8 @@ export default function Login() {
           <p className="text-gray-600">Sign in to your Skype account</p>
         </div>
 
-        {/* Login Form */}
         <div className="bg-white shadow-xl rounded-2xl p-8 border border-gray-100">
           <form className="space-y-6" onSubmit={handleSubmit} noValidate>
-            {/* Email Field */}
             <div>
               <label
                 htmlFor="email"
@@ -218,7 +178,6 @@ export default function Login() {
               )}
             </div>
 
-            {/* Password Field */}
             <div>
               <label
                 htmlFor="password"
@@ -260,8 +219,6 @@ export default function Login() {
                 <p className="mt-1 text-sm text-red-600">{errors.password}</p>
               )}
             </div>
-
-            {/* Forgot Password Link */}
             <div className="flex justify-end">
               <Link
                 href="/forgot-password"
@@ -270,8 +227,6 @@ export default function Login() {
                 Forgot your password?
               </Link>
             </div>
-
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={isLoading}
@@ -287,8 +242,6 @@ export default function Login() {
               )}
             </button>
           </form>
-
-          {/* Divider */}
           <div className="mt-8 mb-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -301,8 +254,6 @@ export default function Login() {
               </div>
             </div>
           </div>
-
-          {/* Sign Up Link */}
           <div className="text-center">
             <Link
               href="/signup"
@@ -311,13 +262,6 @@ export default function Login() {
               Create New Account
             </Link>
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="mt-8 text-center text-xs text-gray-500">
-          <p>
-            By signing in, you agree to our Terms of Service and Privacy Policy
-          </p>
         </div>
       </div>
     </div>

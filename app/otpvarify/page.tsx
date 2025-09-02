@@ -2,15 +2,19 @@
 
 import { otpvaarify } from "@/api/servierce/auth";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { toast } from "react-toastify";
+import { useEffect, useState, useRef } from "react";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { Mail, Shield, RefreshCw, CheckCircle } from "lucide-react";
 
 const OtpVerify = () => {
   const router = useRouter();
-  const [otp, setOtp] = useState("");
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(30);
+  const [isResending, setIsResending] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(60);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     const storedEmail = localStorage.getItem("email");
@@ -22,129 +26,209 @@ const OtpVerify = () => {
     }
   }, [router]);
 
-  const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/[^0-9]/g, '');
-    if (value.length <= 6) {
-      setOtp(value);
+  useEffect(() => {
+    if (timeLeft > 0) {
+      const timer = setInterval(() => {
+        setTimeLeft((prev) => prev - 1);
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [timeLeft]);
+
+  const handleOtpChange = (index: number, value: string) => {
+    // Only allow numbers
+    const numericValue = value.replace(/[^0-9]/g, "");
+
+    if (numericValue.length <= 1) {
+      const newOtp = [...otp];
+      newOtp[index] = numericValue;
+      setOtp(newOtp);
+
+      // Auto-focus next input
+      if (numericValue && index < 5) {
+        inputRefs.current[index + 1]?.focus();
+      }
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData("text").replace(/[^0-9]/g, "");
+
+    if (pastedData.length === 6) {
+      const newOtp = pastedData.split("");
+      setOtp(newOtp);
+      inputRefs.current[5]?.focus();
     }
   };
 
   const verifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (otp.length !== 6) {
-      toast.error("Please enter a valid 6-digit OTP");
+    const otpString = otp.join("");
+    if (otpString.length !== 6) {
+      toast.error("Please enter a valid OTP");
       return;
     }
 
     setIsLoading(true);
-    const credentials = { otp, email };
+    const credentials = { otp: otpString, email };
 
     try {
       const response = await otpvaarify(credentials);
       toast.success(response.message || "OTP verified successfully!");
-      if (response.Token) {
-        localStorage.setItem("token", response.Token);
-        router.push("/");
-      }
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || "OTP verification failed!";
+      const errorMessage =
+        error.response?.data?.message || "OTP verification failed!";
       toast.error(errorMessage);
+      setOtp(["", "", "", "", "", ""]);
+      inputRefs.current[0]?.focus();
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleResendOtp = async () => {
-    // Add your resend OTP API call here
-    setTimeLeft(30);
-    // Start countdown timer
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    setIsResending(true);
+    try {
+      toast.success("OTP has been resent to your email");
+      setTimeLeft(30);
+      setOtp(["", "", "", "", "", ""]);
+      inputRefs.current[0]?.focus();
+    } catch (error) {
+      toast.error("Failed to resend OTP. Please try again.");
+    } finally {
+      setIsResending(false);
+    }
   };
 
+  const isOtpComplete = otp.every((digit) => digit !== "");
+  const maskedEmail = email.replace(/(.{2})(.*)(@.*)/, "$1***$3");
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-md">
-        <div className="text-center">
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            Verify OTP
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Please enter the verification code sent to your email
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+        className="mt-16"
+      />
+
+      <div className="w-full max-w-md">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full mb-4">
+            <Shield className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Verify Your Email
+          </h1>
+          <p className="text-gray-600">
+            We&apos;ve sent a verification code to your email address
           </p>
         </div>
-        <form onSubmit={verifyOtp} className="mt-8 space-y-6">
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
-              <p className="w-full px-4 py-2 border rounded-lg bg-gray-50 text-gray-700">
-                {email}
-              </p>
-            </div>
 
-            <div className="mt-4">
-              <label htmlFor="otp" className="block text-sm font-medium text-gray-700 mb-1">
-                OTP Code
-              </label>
-              <input
-                type="text"
-                id="otp"
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter 6-digit OTP"
-                value={otp}
-                onChange={handleOtpChange}
-                maxLength={6}
-                required
-              />
+        {/* Form Container */}
+        <div className="bg-white/70 backdrop-blur-sm shadow-xl rounded-2xl border border-white/20 p-8">
+          {/* Email Display */}
+          <div className="mb-6">
+            <div className="flex items-center justify-center gap-2 p-4 bg-blue-50 rounded-xl border border-blue-100">
+              <Mail className="w-5 h-5 text-blue-600" />
+              <span className="text-blue-800 font-medium">{maskedEmail}</span>
             </div>
           </div>
 
-          <div>
+          <form onSubmit={verifyOtp} className="space-y-6">
+            {/* OTP Input */}
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-gray-700 text-center">
+                Enter Verification Code
+              </label>
+              <div className="flex gap-2 justify-center" onPaste={handlePaste}>
+                {otp.map((digit, index) => (
+                  <input
+                    key={index}
+                    ref={(el) => (inputRefs.current[index] = el)}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleOtpChange(index, e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(index, e)}
+                    className="w-12 h-12 text-center text-xl font-bold border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white/50 border-gray-200 hover:border-gray-300"
+                    autoComplete="off"
+                  />
+                ))}
+              </div>
+            </div>
+
             <button
               type="submit"
-              disabled={isLoading || otp.length !== 6}
-              className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white 
-                ${isLoading || otp.length !== 6 
-                  ? 'bg-blue-300 cursor-not-allowed' 
-                  : 'bg-blue-600 hover:bg-blue-700'}`}
+              disabled={isLoading || !isOtpComplete}
+              className={`w-full py-3 px-4 rounded-xl font-semibold text-white transition-all duration-200 transform ${
+                isLoading || !isOtpComplete
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
+              }`}
             >
               {isLoading ? (
-                <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   Verifying...
-                </span>
+                </div>
               ) : (
-                'Verify OTP'
+                <div className="flex items-center justify-center gap-2">
+                  <CheckCircle className="w-5 h-5" />
+                  Verify Code
+                </div>
               )}
             </button>
-          </div>
-
-          <div className="text-center">
+            <div className="text-center space-y-3">
+              <p className="text-sm text-gray-600">
+                Didn&apos;t receive the code?
+              </p>
+              <button
+                type="button"
+                onClick={handleResendOtp}
+                disabled={timeLeft > 0 || isResending}
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                  timeLeft > 0 || isResending
+                    ? "text-gray-400 cursor-not-allowed"
+                    : "text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                }`}
+              >
+                <RefreshCw
+                  className={`w-4 h-4 ${isResending ? "animate-spin" : ""}`}
+                />
+                {timeLeft > 0
+                  ? `Resend in ${timeLeft}s`
+                  : isResending
+                  ? "Sending..."
+                  : "Resend Code"}
+              </button>
+            </div>
+          </form>
+          <div className="text-center mt-6">
             <button
-              type="button"
-              onClick={handleResendOtp}
-              disabled={timeLeft > 0}
-              className={`text-sm ${timeLeft > 0 ? 'text-gray-400' : 'text-blue-600 hover:text-blue-500'}`}
+              onClick={() => router.push("/signup")}
+              className="text-gray-600 hover:text-gray-800 text-sm transition-colors duration-200"
             >
-              {timeLeft > 0 
-                ? `Resend OTP in ${timeLeft}s` 
-                : 'Resend OTP'}
+              Back to Sign Up
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

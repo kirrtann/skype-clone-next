@@ -1,6 +1,6 @@
 import { Chat } from "@/api/servierce/chatservis";
 import { useEffect, useState } from "react";
-import { Search, MessageCircle, Users, Video, Bell, Menu } from "lucide-react";
+import { Search, MessageCircle, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 const ContactsPage = () => {
   interface User {
@@ -27,7 +27,6 @@ const ContactsPage = () => {
     fetchUsers();
   }, []);
 
-  // Filter users based on search
   const filteredUsers = users.filter((user) =>
     user.contact_name?.toLowerCase().includes(search.toLowerCase())
   );
@@ -45,7 +44,6 @@ const ContactsPage = () => {
         />
       </div>
 
-      {/* Navigation Tabs */}
       <div className="flex items-center justify-between border-b border-gray-200">
         <button
           onClick={() => setActiveTab("chats")}

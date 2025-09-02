@@ -5,7 +5,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { resetPassword } from "@/api/servierce/auth";
 
-export default function ResetPassword({ params }: { params: { token: string } }) {
+export default function ResetPassword() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [passwords, setPasswords] = useState({
@@ -23,12 +23,10 @@ export default function ResetPassword({ params }: { params: { token: string } })
       toast.error("Passwords do not match!");
       return;
     }
-    const token =localStorage.getItem("token");
-const data = {
-  newPasswor: passwords.newPassword,
- email: "email",
-  
-};
+    const data = {
+      newPasswor: passwords.newPassword,
+      email: "email",
+    };
     setLoading(true);
     try {
       await resetPassword(data);
@@ -36,7 +34,10 @@ const data = {
         onClose: () => router.push("/login"),
       });
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to reset password. Please try again.");
+      toast.error(
+        error.response?.data?.message ||
+          "Failed to reset password. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -46,10 +47,17 @@ const data = {
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <ToastContainer />
       <div className="w-full max-w-md bg-white shadow-lg rounded-2xl p-8">
-        <h2 className="text-2xl font-semibold text-center text-gray-800 mb-6">Reset Password</h2>
+        <h2 className="text-2xl font-semibold text-center text-gray-800 mb-6">
+          Reset Password
+        </h2>
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
-            <label htmlFor="newPassword" className="block text-sm font-medium text-gray-600">New Password</label>
+            <label
+              htmlFor="newPassword"
+              className="block text-sm font-medium text-gray-600"
+            >
+              New Password
+            </label>
             <input
               type="password"
               id="newPassword"
@@ -61,7 +69,12 @@ const data = {
             />
           </div>
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-600">Confirm Password</label>
+            <label
+              htmlFor="confirmPassword"
+              className="block text-sm font-medium text-gray-600"
+            >
+              Confirm Password
+            </label>
             <input
               type="password"
               id="confirmPassword"

@@ -13,7 +13,6 @@ axiosInstance.interceptors.request.use(
   (config) => {
     const token =
       localStorage.getItem("token") ||
-      localStorage.getItem("authToken") ||
       (() => {
         try {
           const userData = localStorage.getItem("user-storage");
@@ -39,12 +38,9 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     console.error("API Error:", error.response?.data?.message || error.message);
-
-    // ✅ Handle 401 Unauthorized errors
     if (error.response?.status === 401) {
-      console.warn("🚨 Authentication failed - clearing storage");
+      console.warn("Authentication failed - clearing storage");
       localStorage.removeItem("token");
-      localStorage.removeItem("authToken");
       localStorage.removeItem("user-storage");
     }
 

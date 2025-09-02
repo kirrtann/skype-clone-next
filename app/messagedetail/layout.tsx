@@ -9,10 +9,7 @@ export default function MessageLayout({
 }) {
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
       <SkypeSidebar />
-
-      {/* Main Content Area */}
       <div className="flex-1 flex flex-col">{children}</div>
     </div>
   );

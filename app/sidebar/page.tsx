@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { Chat, SearchUser } from "@/api/servierce/chatservis";
 import { useRouter } from "next/navigation";
 import useUser from "../zustand/useUser";
+import { useMessageDetailStore } from "../zustand/MessageUser";
 
 interface User {
   id: string;
@@ -15,9 +16,8 @@ interface User {
   email?: string;
 }
 
-const getInitials = (name: string | undefined): string => {
-  return name ? name.charAt(0).toUpperCase() : "?";
-};
+const getInitials = (name?: string): string =>
+  name ? name.charAt(0).toUpperCase() : "?";
 
 function SkypeSidebar() {
   const [search, setSearch] = useState("");
@@ -26,25 +26,21 @@ function SkypeSidebar() {
   const [searchResults, setSearchResults] = useState<User[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
-  const [name, setName] = useState<string>("");
+  const [name, setName] = useState("");
 
   const { user } = useUser();
   const router = useRouter();
+  const { goToMessageDetail } = useMessageDetailStore();
 
   useEffect(() => {
-    const storedName = user?.name;
-    if (storedName) {
-      setName(storedName);
-    }
-  }, []);
+    if (user?.name) setName(user.name);
+  }, [user?.name]);
 
   const fetchUsers = useCallback(async () => {
     if (!user?.id) return;
-
     try {
       const response = await Chat(user.id);
-      const data = response?.data;
-      setUsers(data || []);
+      setUsers(response?.data || []);
     } catch (error) {
       console.error("Error fetching users:", error);
       setUsers([]);
@@ -55,17 +51,13 @@ function SkypeSidebar() {
     fetchUsers();
   }, [fetchUsers]);
 
+  // Handle search with debounce
   const handleSearch = useCallback(async () => {
     if (!search.trim()) return;
-
     setIsSearching(true);
     try {
       const response = await SearchUser(search);
-      if (response?.data) {
-        setSearchResults(response.data);
-      } else {
-        setSearchResults([]);
-      }
+      setSearchResults(response?.data || []);
     } catch (error) {
       console.error("Error searching users:", error);
       setSearchResults([]);
@@ -74,9 +66,8 @@ function SkypeSidebar() {
     }
   }, [search]);
 
-  // Debounced search effect
   useEffect(() => {
-    const debounceTimer = setTimeout(() => {
+    const timer = setTimeout(() => {
       if (search.trim()) {
         handleSearch();
         setShowSearchResults(true);
@@ -86,67 +77,43 @@ function SkypeSidebar() {
       }
     }, 300);
 
-    return () => clearTimeout(debounceTimer);
+    return () => clearTimeout(timer);
   }, [search, handleSearch]);
 
+  // Filtered users
   const filteredUsers = useMemo(() => {
-    if (showSearchResults && activeTab === "contacts") {
-      return searchResults;
-    }
-
-    if (activeTab === "contacts") {
-      return users;
-    }
-
-    // For chats tab, filter by search if not showing search results
-    if (!showSearchResults && search.trim()) {
-      return users.filter((user) =>
-        user.contact_name?.toLowerCase().includes(search.toLowerCase())
+    if (showSearchResults) return searchResults;
+    if (activeTab === "contacts") return users;
+    if (search.trim()) {
+      return users.filter((u) =>
+        u.contact_name?.toLowerCase().includes(search.toLowerCase())
       );
     }
-
     return users;
   }, [activeTab, search, users, searchResults, showSearchResults]);
 
-  // const navigateToMessage = useCallback(
-  //   (email: string) => {
-  //     router.push(`/messagedetail?email=${encodeURIComponent(email)}`);
-  //   },
-  //   [router]
-  // );
-
-  const handleTabChange = useCallback(
-    (tab: "chats" | "contacts") => {
-      setActiveTab(tab);
-      if (search && !showSearchResults) {
-        setSearch("");
-      }
-    },
-    [search, showSearchResults]
-  );
-
-  const renderUserItem = (user: User, isSearchResult = false) => (
-    <div
-      key={user.id}
-      onClick={() => {
-        // ✅ This starts new conversation
-        const email = isSearchResult ? user.email : user.contact_email;
-        router.push(`/messagedetail?email=${email}`);
-      }}
-      className="flex items-center gap-3 p-3 hover:bg-gray-100 cursor-pointer"
-    >
-      <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
-        {user.name?.charAt(0).toUpperCase()}
+  // Render user item
+  const renderUserItem = useCallback(
+    (user: User) => (
+      <div
+        key={user.id}
+        onClick={() => goToMessageDetail(user, router)}
+        className="flex items-center gap-3 p-3 hover:bg-gray-100 cursor-pointer"
+      >
+        <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+          {getInitials(user.name || user.contact_name)}
+        </div>
+        <div>
+          <p className="font-medium">{user.name || user.contact_name}</p>
+        </div>
       </div>
-      <div>
-        <p className="font-medium">{user.name}</p>
-      </div>
-    </div>
+    ),
+    [goToMessageDetail, router]
   );
 
   return (
     <div className="w-72 h-screen flex flex-col bg-white border-r border-gray-200">
-      {/* User Profile */}
+      {/* Header */}
       <div className="p-3 border-t border-gray-200 flex items-center gap-3 bg-gray-50">
         <div className="w-9 h-9 bg-[#0078d4] rounded-full flex items-center justify-center text-white font-semibold">
           {getInitials(name)}
@@ -158,7 +125,7 @@ function SkypeSidebar() {
         </div>
       </div>
 
-      {/* Search Bar */}
+      {/* Search */}
       <div className="relative p-4 border-b border-gray-200">
         <Search className="absolute left-6 top-7 text-gray-400" size={16} />
         <input
@@ -175,43 +142,28 @@ function SkypeSidebar() {
         )}
       </div>
 
-      {/* Search Results or Regular Content */}
+      {/* Content */}
       {showSearchResults ? (
         <div className="flex-1 overflow-y-auto">
-          {/* Chat Results */}
           <div className="py-2">
             <div className="px-4 py-2 text-xs font-semibold text-gray-500">
-              CHATS
+              RESULTS
             </div>
             {filteredUsers.length > 0 ? (
-              filteredUsers.map((user) => renderUserItem(user))
+              filteredUsers.map(renderUserItem)
             ) : (
               <div className="px-4 py-2 text-sm text-gray-500">
-                No chats found
-              </div>
-            )}
-          </div>
-
-          {/* People Results */}
-          <div className="py-2 border-t border-gray-200">
-            <div className="px-4 py-2 text-xs font-semibold text-gray-500">
-              PEOPLE
-            </div>
-            {searchResults.length > 0 ? (
-              searchResults.map((user) => renderUserItem(user, true))
-            ) : (
-              <div className="px-4 py-2 text-sm text-gray-500">
-                {isSearching ? "Searching..." : "No people found"}
+                {isSearching ? "Searching..." : "No results found"}
               </div>
             )}
           </div>
         </div>
       ) : (
         <>
-          {/* Navigation Tabs */}
+          {/* Tabs */}
           <div className="flex items-center justify-between border-b border-gray-200">
             <button
-              onClick={() => handleTabChange("chats")}
+              onClick={() => setActiveTab("chats")}
               className={cn(
                 "flex-1 py-3 flex flex-col items-center text-xs font-medium transition-colors",
                 activeTab === "chats"
@@ -223,7 +175,7 @@ function SkypeSidebar() {
               <span className="mt-1">Chats</span>
             </button>
             <button
-              onClick={() => handleTabChange("contacts")}
+              onClick={() => setActiveTab("contacts")}
               className={cn(
                 "flex-1 py-3 flex flex-col items-center text-xs font-medium transition-colors",
                 activeTab === "contacts"
@@ -236,14 +188,14 @@ function SkypeSidebar() {
             </button>
           </div>
 
-          {/* User List */}
+          {/* Users */}
           <div className="flex-1 overflow-y-auto">
             {filteredUsers.length === 0 ? (
               <div className="p-4 text-center text-gray-500">
                 {activeTab === "chats" ? "No chats found" : "No contacts found"}
               </div>
             ) : (
-              filteredUsers.map((user) => renderUserItem(user))
+              filteredUsers.map(renderUserItem)
             )}
           </div>
         </>
