@@ -12,10 +12,16 @@ let socket: Socket | null = null;
 
 interface MessageDetail {
   id: string | number;
-  sender: string;
-  receiver?: string;
-  timestamp?: string | number;
-  message?: string;
+  message: string;
+  created_at?: string | number;
+  sender: {
+    id: string;
+    name: string;
+  };
+  receiver: {
+    id: string;
+    name: string;
+  };
 }
 
 const MessageHistory = () => {
@@ -27,19 +33,24 @@ const MessageHistory = () => {
   const [messageInput, setMessageInput] = useState("");
   const [isConnected, setIsConnected] = useState(false);
   const [room, setRoom] = useState("");
+  const [typingStatus, setTypingStatus] = useState<{
+    userId: string;
+    isTyping: boolean;
+  } | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  let typingTimeout: NodeJS.Timeout;
 
   const currentUserId = user?.id;
   const targetUserId = searchParams.get("id");
   const targetUserName = selectedUser?.name || targetUserId || "Unknown";
 
-  // Scroll to bottom when new messages arrive
+  // Scroll to bottom when messages update
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Generate room ID
+  // Set room based on sorted user IDs
   useEffect(() => {
     if (currentUserId && targetUserId) {
       const roomId = [currentUserId, targetUserId].sort().join("-");
@@ -47,7 +58,7 @@ const MessageHistory = () => {
     }
   }, [currentUserId, targetUserId]);
 
-  // Setup socket
+  // Initialize socket connection
   useEffect(() => {
     if (!currentUserId || !room) return;
 
@@ -73,23 +84,30 @@ const MessageHistory = () => {
         setIsConnected(false);
       });
 
-      socket.on("room-joined", (data) => {
-        console.log("Room joined:", data);
-      });
-
       socket.on("new-message", (data) => {
-        if (data.sender !== currentUserId) {
+        if (data.sender?.id !== currentUserId) {
           setMessages((prev) => [
             ...prev,
             {
               id: data.id || Date.now(),
-              sender: data.sender,
               message: data.message,
               timestamp: data.timestamp || new Date().toISOString(),
+              sender: { id: data.sender.id, name: data.sender.name },
+              receiver: { id: data.receiver.id, name: data.receiver.name },
             },
           ]);
         }
       });
+      socket.on(
+        "user-typing",
+        (data: { userId: string; room: string; isTyping: boolean }) => {
+          if (data.room === room && data.userId !== currentUserId) {
+            setTypingStatus(
+              data.isTyping ? { userId: data.userId, isTyping: true } : null
+            );
+          }
+        }
+      );
     }
 
     return () => {
@@ -98,28 +116,7 @@ const MessageHistory = () => {
     };
   }, [currentUserId, room, targetUserId]);
 
-  // Send message
-  const sendMessage = () => {
-    if (!messageInput.trim() || !socket?.connected) return;
-
-    const newMessage: MessageDetail = {
-      id: Date.now(),
-      sender: currentUserId!,
-      message: messageInput,
-      timestamp: new Date().toISOString(),
-    };
-
-    setMessages((prev) => [...prev, newMessage]);
-
-    socket.emit("send-message", {
-      room,
-      message: messageInput,
-      receiverId: targetUserId,
-      senderId: currentUserId,
-    });
-
-    setMessageInput("");
-  };
+  // Fetch chat history from server
   useEffect(() => {
     if (!currentUserId || !targetUserId) return;
 
@@ -127,19 +124,16 @@ const MessageHistory = () => {
       try {
         const res = await getmeassage({
           userId: currentUserId,
-          otherUserID: targetUserId,
+          otherUserId: targetUserId,
         });
         const data = res?.data || [];
-        console.log(data);
-
-        const formatted = data.map((msg: any) => ({
+        const formatted = data.map((msg: MessageDetail) => ({
           id: msg.id,
-          sender: msg.sender,
-          receiver: msg.receiver,
           message: msg.message,
-          timestamp: msg.created_at,
+          created_at: msg.created_at,
+          sender: { id: msg.sender?.id, name: msg.sender?.name },
+          receiver: { id: msg.receiver?.id, name: msg.receiver?.name },
         }));
-
         setMessages(formatted);
       } catch (err) {
         console.error("Error fetching history:", err);
@@ -148,6 +142,41 @@ const MessageHistory = () => {
 
     fetchHistory();
   }, [currentUserId, targetUserId]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMessageInput(e.target.value);
+
+    if (!socket || !room) return;
+
+    socket.emit("typing-start", { room });
+
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => {
+      socket.emit("typing-stop", { room });
+    }, 1000);
+  };
+
+  const sendMessage = () => {
+    if (!messageInput.trim() || !socket?.connected) return;
+    const newMessage: MessageDetail = {
+      id: Date.now(),
+      message: messageInput,
+      created_at: new Date().toISOString(),
+      sender: { id: currentUserId!, name: user?.name || "You" },
+      receiver: { id: targetUserId!, name: targetUserName },
+    };
+    setMessages((prev) => [...prev, newMessage]);
+
+    socket.emit("send-message", {
+      room,
+      message: messageInput,
+      receiverId: targetUserId,
+      senderId: currentUserId,
+    });
+    socket.emit("typing-stop", { room });
+    setMessageInput("");
+  };
+
   return (
     <div className="flex flex-col h-screen bg-gradient-to-b from-gray-100 to-gray-200">
       {/* Header */}
@@ -173,7 +202,6 @@ const MessageHistory = () => {
         </div>
       </div>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.length === 0 ? (
           <div className="text-center text-gray-500 mt-10">
@@ -185,19 +213,21 @@ const MessageHistory = () => {
             <div
               key={msg.id}
               className={`flex ${
-                msg.sender === currentUserId ? "justify-end" : "justify-start"
+                msg.sender.id === currentUserId
+                  ? "justify-end"
+                  : "justify-start"
               }`}
             >
               <div
                 className={`max-w-xs px-4 py-2 rounded-2xl shadow-sm text-sm ${
-                  msg.sender === currentUserId
+                  msg.sender.id === currentUserId
                     ? "bg-blue-600 text-white rounded-br-none"
-                    : "bg-gray-100  text-gray-900 rounded-bl-none"
+                    : "bg-gray-100 text-gray-900 rounded-bl-none"
                 }`}
               >
                 <p>{msg.message}</p>
                 <span className="text-[10px] opacity-70 block mt-1 text-right">
-                  {new Date(msg.timestamp!).toLocaleTimeString([], {
+                  {new Date(msg.created_at!).toLocaleTimeString([], {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
@@ -209,13 +239,15 @@ const MessageHistory = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
+      {typingStatus?.isTyping && (
+        <div className="px-4 text-sm text-gray-500 mb-1">typing...</div>
+      )}
       <div className="p-4 border-t bg-white">
         <div className="flex gap-2">
           <input
             type="text"
             value={messageInput}
-            onChange={(e) => setMessageInput(e.target.value)}
+            onChange={handleInputChange}
             onKeyDown={(e) => e.key === "Enter" && sendMessage()}
             placeholder="Type a message..."
             className="flex-1 px-4 py-2 border text-black rounded-full"

@@ -24,7 +24,7 @@ interface ChatList {
 const getInitials = (name?: string): string =>
   name ? name.charAt(0).toUpperCase() : "?";
 
-function SkypeSidebar() {
+function ChatList() {
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"chats" | "contacts">("chats");
   const [users, setUsers] = useState<User[]>([]);
@@ -265,4 +265,4 @@ function SkypeSidebar() {
   );
 }
 
-export default SkypeSidebar;
+export default ChatList;

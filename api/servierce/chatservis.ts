@@ -19,13 +19,9 @@ export const SearchUser = async (name: string) => {
 
 export const getmeassage = async (requestBody: {
   userId: string;
-  otherUserID: string;
+  otherUserId: string;
 }) => {
   return apiHelper(axiosInstance.post("chat/history", requestBody));
-};
-
-export const getUserRooms = async (userId: string) => {
-  return apiHelper(axiosInstance.get(`chat/rooms/${userId}`));
 };
 
 export const searchUsers = async (requestBody: {

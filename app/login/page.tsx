@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { toast, ToastContainer } from "react-toastify";
+import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Eye, EyeOff, Mail, Lock, Loader2 } from "lucide-react";
 import { login } from "@/api/servierce/auth";
@@ -27,15 +27,11 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Partial<LoginFormData>>({});
 
-  const isAuthenticated = () => {
-    return !!(user?.token && user.token.trim() !== "");
-  };
-
   useEffect(() => {
-    if (isAuthenticated()) {
+    if (user?.token) {
       router.push("/");
     }
-  }, []);
+  }, [user, router]);
 
   const validateForm = (): boolean => {
     const newErrors: Partial<LoginFormData> = {};
@@ -90,17 +86,8 @@ export default function Login() {
       } else {
         throw new Error("Login failed - invalid credentials");
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Login error:", error);
-      const errorMessage =
-        error?.response?.data?.message ||
-        error?.message ||
-        "Login failed. Please check your credentials.";
-
-      toast.error(errorMessage, {
-        position: "top-right",
-        autoClose: 4000,
-      });
     } finally {
       setIsLoading(false);
     }
@@ -146,7 +133,7 @@ export default function Login() {
           <p className="text-gray-600">Sign in to your Skype account</p>
         </div>
 
-        <div className="bg-white shadow-xl rounded-2xl p-8 border border-gray-100">
+        <div className="bg-white shadow-xl text-black rounded-2xl p-8 border border-gray-100">
           <form className="space-y-6" onSubmit={handleSubmit} noValidate>
             <div>
               <label

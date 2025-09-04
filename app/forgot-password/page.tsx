@@ -25,8 +25,8 @@ export default function ForgotPassword() {
         await verifyForgotPasswordOtp({ email, otp });
         router.push(`/change-password?email=${email}&otp=${otp}`);
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Operation failed. Please try again.");
+    } catch (error) {
+      console.error("Something want wrong", error);
     } finally {
       setLoading(false);
     }
@@ -36,10 +36,17 @@ export default function ForgotPassword() {
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <ToastContainer />
       <div className="w-full max-w-md bg-white shadow-lg rounded-2xl p-8">
-        <h2 className="text-2xl font-semibold text-center text-gray-800 mb-6">Forgot Password</h2>
+        <h2 className="text-2xl font-semibold text-center text-gray-800 mb-6">
+          Forgot Password
+        </h2>
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-600">Email</label>
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-600"
+            >
+              Email
+            </label>
             <input
               type="email"
               id="email"
@@ -51,10 +58,15 @@ export default function ForgotPassword() {
               required
             />
           </div>
-          
+
           {showOtpInput && (
             <div>
-              <label htmlFor="otp" className="block text-sm font-medium text-gray-600">OTP</label>
+              <label
+                htmlFor="otp"
+                className="block text-sm font-medium text-gray-600"
+              >
+                OTP
+              </label>
               <input
                 type="text"
                 id="otp"
@@ -67,16 +79,23 @@ export default function ForgotPassword() {
             </div>
           )}
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
             disabled={loading}
           >
-            {loading ? "Processing..." : showOtpInput ? "Verify OTP" : "Send OTP"}
+            {loading
+              ? "Processing..."
+              : showOtpInput
+              ? "Verify OTP"
+              : "Send OTP"}
           </button>
         </form>
         <p className="mt-4 text-sm text-center text-gray-600">
-          Remember your password? <Link href="/login" className="text-blue-600 hover:underline">Login</Link>
+          Remember your password?{" "}
+          <Link href="/login" className="text-blue-600 hover:underline">
+            Login
+          </Link>
         </p>
       </div>
     </div>

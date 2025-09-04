@@ -3,12 +3,10 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { resetPassword, verifyForgotPasswordOtp } from "@/api/servierce/auth";
+import { resetPassword } from "@/api/servierce/auth";
 import { type FC } from "react";
 
-interface ChangePasswordProps {}
-
-const ChangePassword: FC<ChangePasswordProps> = () => {
+const ChangePassword: FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email");
@@ -40,14 +38,13 @@ const ChangePassword: FC<ChangePasswordProps> = () => {
       await resetPassword({
         email,
         newPassword: passwords.newPassword,
-        
       });
 
       toast.success("Password changed successfully!", {
         onClose: () => router.push("/login"),
       });
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to change password. Please try again.");
+    } catch (error) {
+      console.error("Failed to change password. Please try again.", error);
     } finally {
       setLoading(false);
     }
@@ -57,10 +54,17 @@ const ChangePassword: FC<ChangePasswordProps> = () => {
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <ToastContainer />
       <div className="w-full max-w-md bg-white shadow-lg rounded-2xl p-8">
-        <h2 className="text-2xl font-semibold text-center text-gray-800 mb-6">Change Password</h2>
+        <h2 className="text-2xl font-semibold text-center text-gray-800 mb-6">
+          Change Password
+        </h2>
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
-            <label htmlFor="newPassword" className="block text-sm font-medium text-gray-600">New Password</label>
+            <label
+              htmlFor="newPassword"
+              className="block text-sm font-medium text-gray-600"
+            >
+              New Password
+            </label>
             <input
               type="password"
               id="newPassword"
@@ -72,7 +76,12 @@ const ChangePassword: FC<ChangePasswordProps> = () => {
             />
           </div>
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-600">Confirm Password</label>
+            <label
+              htmlFor="confirmPassword"
+              className="block text-sm font-medium text-gray-600"
+            >
+              Confirm Password
+            </label>
             <input
               type="password"
               id="confirmPassword"
