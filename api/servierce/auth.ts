@@ -17,18 +17,6 @@ export const login = async (credentials: {
   return apiHelper(axiosInstance.post("/auth/login", credentials));
 };
 
-// export const login = async (credentials: {
-//   email: string;
-//   password: string;
-// }) => {
-//   try {
-//     const response = axios.post("/auth/login", credentials);
-//     return await response;
-//   } catch (err: unknown) {
-//     console.error("login error", err);
-//     return undefined;
-//   }
-// };
 export const otpvaarify = async (credentials: {
   email: string | null;
   otp: string;

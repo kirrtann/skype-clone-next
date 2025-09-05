@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
-import { Send, Wifi, WifiOff } from "lucide-react";
+import { Send } from "lucide-react";
 import { io, Socket } from "socket.io-client";
 import useUser from "../zustand/useUser";
 import { useMessageDetailStore } from "../zustand/MessageUser";
@@ -116,7 +116,6 @@ const MessageHistory = () => {
     };
   }, [currentUserId, room, targetUserId]);
 
-  // Fetch chat history from server
   useEffect(() => {
     if (!currentUserId || !targetUserId) return;
 
@@ -187,7 +186,7 @@ const MessageHistory = () => {
         <div className="flex-1">
           <h2 className="font-semibold text-gray-800">{targetUserName}</h2>
           <div className="flex items-center gap-1 text-xs">
-            {isConnected ? (
+            {/* {isConnected ? (
               <>
                 <Wifi className="w-3 h-3 text-green-500" />
                 <span className="text-green-600">Online</span>
@@ -197,7 +196,7 @@ const MessageHistory = () => {
                 <WifiOff className="w-3 h-3 text-red-500" />
                 <span className="text-red-600">Connecting...</span>
               </>
-            )}
+            )} */}
           </div>
         </div>
       </div>

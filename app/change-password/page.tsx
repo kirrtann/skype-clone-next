@@ -5,6 +5,8 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { resetPassword } from "@/api/servierce/auth";
 import { type FC } from "react";
+import CustomInput from "@/components/custominput";
+import { Eye, EyeOff } from "lucide-react";
 
 const ChangePassword: FC = () => {
   const router = useRouter();
@@ -12,6 +14,7 @@ const ChangePassword: FC = () => {
   const email = searchParams.get("email");
   const otp = searchParams.get("otp");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [passwords, setPasswords] = useState({
     newPassword: "",
     confirmPassword: "",
@@ -57,41 +60,38 @@ const ChangePassword: FC = () => {
         <h2 className="text-2xl font-semibold text-center text-gray-800 mb-6">
           Change Password
         </h2>
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <div>
-            <label
-              htmlFor="newPassword"
-              className="block text-sm font-medium text-gray-600"
-            >
-              New Password
-            </label>
-            <input
-              type="password"
-              id="newPassword"
-              value={passwords.newPassword}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter new password"
-              required
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="confirmPassword"
-              className="block text-sm font-medium text-gray-600"
-            >
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              id="confirmPassword"
-              value={passwords.confirmPassword}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-              placeholder="Confirm new password"
-              required
-            />
-          </div>
+        <form className="space-y-4 text-black" onSubmit={handleSubmit}>
+          <CustomInput
+            label=" New Password"
+            name="password"
+            value={passwords.newPassword}
+            onChange={handleChange}
+            id="newPassword"
+            type="password"
+            placeholder="Enter new password"
+          />
+
+          <CustomInput
+            label=" Confirm Password"
+            name="password"
+            value={passwords.confirmPassword}
+            onChange={handleChange}
+            id="confirmPassword"
+            type={showPassword ? "text" : "password"}
+            placeholder="Confirm new password"
+            rightIcon={
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                ) : (
+                  <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                )}
+              </button>
+            }
+          />
           <button
             type="submit"
             className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"

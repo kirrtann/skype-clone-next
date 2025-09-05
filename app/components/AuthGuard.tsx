@@ -13,7 +13,13 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
   const pathname = usePathname();
   const { user } = useUser();
 
-  const publicRoutes = ["/login", "/signup", "/forgot-password ", "/otpvarify"];
+  const publicRoutes = [
+    "/login",
+    "/signup",
+    "/forgot-password",
+    "/otpvarify",
+    "/change-password",
+  ];
   const isPublicRoute = publicRoutes.includes(pathname);
 
   useEffect(() => {

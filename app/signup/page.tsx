@@ -6,6 +6,8 @@ import "react-toastify/dist/ReactToastify.css";
 import { signup } from "@/api/servierce/auth";
 import Link from "next/link";
 import { Eye, EyeOff, User, Mail, Calendar, Lock } from "lucide-react";
+import CustomInput from "@/components/custominput";
+import validateFields from "@/components/forminputerror";
 
 interface ValidationErrors {
   email?: string;
@@ -29,63 +31,26 @@ export default function SignUp() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
-    // Clear error when user starts typing
     if (errors[e.target.id as keyof ValidationErrors]) {
       setErrors({ ...errors, [e.target.id]: undefined });
     }
   };
 
-  const validateForm = (): boolean => {
-    const newErrors: ValidationErrors = {};
-
-    // Email validation
-    if (!formData.email) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
-    }
-
-    // Password validation
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters";
-    } else if (
-      !/(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9])/.test(
-        formData.password
-      )
-    ) {
-      newErrors.password =
-        "Password must contain uppercase, lowercase, number and special character";
-    }
-
-    // Name validation
-    if (!formData.name) {
-      newErrors.name = "Name is required";
-    } else if (formData.name.length < 2) {
-      newErrors.name = "Name must be at least 2 characters";
-    }
-
-    // Birth date validation
-    if (!formData.birth_date) {
-      newErrors.birth_date = "Birth date is required";
-    } else {
-      const birthDate = new Date(formData.birth_date);
-      const today = new Date();
-      const age = today.getFullYear() - birthDate.getFullYear();
-      if (age < 13) {
-        newErrors.birth_date = "You must be at least 13 years old";
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const validateRegisterForm = (): boolean => {
+    const errors = validateFields(formData, [
+      "email",
+      "password",
+      "name",
+      "birth_date",
+    ]);
+    setErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
+    if (!validateRegisterForm()) {
       return;
     }
 
@@ -103,11 +68,8 @@ export default function SignUp() {
       toast.success(response.message || "Signup successful!");
       if (response.status === 1) {
         router.push("/otpvarify");
-      }
-    } catch (error: unknown) {
-      const errorMessage =
-        error.response?.data?.message || "Signup failed. Please try again.";
-      toast.error(errorMessage);
+      } else toast.error(response?.message || "Sing UP Filed");
+    } catch {
     } finally {
       setIsLoading(false);
     }
@@ -130,7 +92,6 @@ export default function SignUp() {
       />
 
       <div className="w-full max-w-md text-black">
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full mb-4">
             <User className="w-8 h-8 text-white" />
@@ -140,169 +101,85 @@ export default function SignUp() {
           </h1>
           <p className="text-gray-600">Join us and start your journey today</p>
         </div>
-
-        {/* Form Container */}
         <div className="bg-white/70 backdrop-blur-sm shadow-xl rounded-2xl border border-white/20 p-8">
           <form className="space-y-6" onSubmit={handleSubmit} noValidate>
-            {/* Name Field */}
             <div className="space-y-2">
-              <label
-                htmlFor="name"
-                className="block text-sm font-semibold text-gray-700"
-              >
-                Full Name
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <CustomInput
+                label="Full Name"
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                type="text"
+                placeholder="Enter Your Name"
+                leftIcon={
                   <User
                     className={`h-5 w-5 ${
                       errors.name ? "text-red-400" : "text-gray-400"
                     }`}
                   />
-                </div>
-                <input
-                  type="text"
-                  id="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 ${
-                    errors.name
-                      ? "border-red-300 focus:ring-red-500"
-                      : "border-gray-200 hover:border-gray-300"
-                  }`}
-                  placeholder="Enter your full name"
-                />
-              </div>
-              {errors.name && (
-                <p className="text-sm text-red-500 flex items-center gap-1">
-                  <span className="w-1 h-1 bg-red-500 rounded-full"></span>
-                  {errors.name}
-                </p>
-              )}
+                }
+                error={errors.name}
+              />
             </div>
-
-            {/* Email Field */}
             <div className="space-y-2">
-              <label
-                htmlFor="email"
-                className="block text-sm font-semibold text-gray-700"
-              >
-                Email Address
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail
-                    className={`h-5 w-5 ${
-                      errors.email ? "text-red-400" : "text-gray-400"
-                    }`}
-                  />
-                </div>
-                <input
-                  type="email"
-                  id="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 ${
-                    errors.email
-                      ? "border-red-300 focus:ring-red-500"
-                      : "border-gray-200 hover:border-gray-300"
-                  }`}
-                  placeholder="Enter your email address"
-                />
-              </div>
-              {errors.email && (
-                <p className="text-sm text-red-500 flex items-center gap-1">
-                  <span className="w-1 h-1 bg-red-500 rounded-full"></span>
-                  {errors.email}
-                </p>
-              )}
+              <CustomInput
+                label="Email Address"
+                type="email"
+                name="email"
+                id="email"
+                placeholder="Enter your email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                leftIcon={<Mail className="h-5 w-5 text-gray-400" />}
+                error={errors.email}
+              />
             </div>
-
-            {/* Password Field */}
             <div className="space-y-2">
-              <label
-                htmlFor="password"
-                className="block text-sm font-semibold text-gray-700"
-              >
-                Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock
-                    className={`h-5 w-5 ${
-                      errors.password ? "text-red-400" : "text-gray-400"
-                    }`}
-                  />
-                </div>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  id="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 ${
-                    errors.password
-                      ? "border-red-300 focus:ring-red-500"
-                      : "border-gray-200 hover:border-gray-300"
-                  }`}
-                  placeholder="Create a strong password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
-                </button>
-              </div>
-              {errors.password && (
-                <p className="text-sm text-red-500 flex items-center gap-1">
-                  <span className="w-1 h-1 bg-red-500 rounded-full"></span>
-                  {errors.password}
-                </p>
-              )}
+              <CustomInput
+                label="Password"
+                type={showPassword ? "text" : "password"}
+                name="password"
+                id="password"
+                placeholder="Enter your password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                leftIcon={<Lock className="h-5 w-5 text-gray-400" />}
+                rightIcon={
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                    ) : (
+                      <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                    )}
+                  </button>
+                }
+                error={errors.password}
+              />
             </div>
-
-            {/* Birth Date Field */}
             <div className="space-y-2">
-              <label
-                htmlFor="birth_date"
-                className="block text-sm font-semibold text-gray-700"
-              >
-                Date of Birth
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <CustomInput
+                label="Date Of Birth"
+                type="date"
+                id="birth_date"
+                value={formData.birth_date}
+                onChange={handleChange}
+                error={errors.birth_date}
+                leftIcon={
                   <Calendar
                     className={`h-5 w-5 ${
                       errors.birth_date ? "text-red-400" : "text-gray-400"
                     }`}
                   />
-                </div>
-                <input
-                  type="date"
-                  id="birth_date"
-                  value={formData.birth_date}
-                  onChange={handleChange}
-                  className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 ${
-                    errors.birth_date
-                      ? "border-red-300 focus:ring-red-500"
-                      : "border-gray-200 hover:border-gray-300"
-                  }`}
-                />
-              </div>
-              {errors.birth_date && (
-                <p className="text-sm text-red-500 flex items-center gap-1">
-                  <span className="w-1 h-1 bg-red-500 rounded-full"></span>
-                  {errors.birth_date}
-                </p>
-              )}
+                }
+              />
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={isLoading}
@@ -323,7 +200,6 @@ export default function SignUp() {
             </button>
           </form>
 
-          {/* Sign In Link */}
           <div className="mt-8 text-center">
             <p className="text-gray-600">
               Already have an account?{" "}

@@ -1,10 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { toast } from "react-hot-toast";
 
-const apiHelper = async (
-  request: Promise<any>, 
-  showAlert: boolean = false
-) => {
+const apiHelper = async (request: Promise<any>, showAlert: boolean = false) => {
   try {
     const response = await request;
 
@@ -15,12 +12,10 @@ const apiHelper = async (
     return response.data;
   } catch (error: any) {
     const errorMessage =
-      error?.response?.data?.message || "An unexpected error occurred!";
+      error?.response?.message || "An unexpected error occurred!";
     toast.error(errorMessage);
     return error?.response?.data;
   }
 };
 
 export default apiHelper;
-
-

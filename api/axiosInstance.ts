@@ -37,7 +37,7 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error("API Error:", error.response?.data?.message || error.message);
+    console.error("API Error:", error.response?.message || error.message);
     if (error.response?.status === 401) {
       console.warn("Authentication failed - clearing storage");
       localStorage.removeItem("token");

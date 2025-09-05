@@ -2,19 +2,21 @@
 
 import { otpvaarify } from "@/api/servierce/auth";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Mail, Shield, RefreshCw, CheckCircle } from "lucide-react";
 
+const OTP_LENGTH = 6;
+
 const OtpVerify = () => {
   const router = useRouter();
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [timeLeft, setTimeLeft] = useState(60);
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const inputRefs = useRef<HTMLInputElement[]>([]);
 
   useEffect(() => {
     const storedEmail = localStorage.getItem("email");
@@ -27,27 +29,26 @@ const OtpVerify = () => {
   }, [router]);
 
   useEffect(() => {
-    if (timeLeft > 0) {
-      const timer = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
-      }, 1000);
-      return () => clearInterval(timer);
-    }
+    if (timeLeft <= 0) return;
+    const timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
+    return () => clearInterval(timer);
   }, [timeLeft]);
 
+  const resetOtp = useCallback(() => {
+    setOtp(Array(OTP_LENGTH).fill(""));
+    inputRefs.current[0]?.focus();
+  }, []);
+
   const handleOtpChange = (index: number, value: string) => {
-    // Only allow numbers
-    const numericValue = value.replace(/[^0-9]/g, "");
+    const numericValue = value.replace(/\D/g, "");
+    if (numericValue.length > 1) return;
 
-    if (numericValue.length <= 1) {
-      const newOtp = [...otp];
-      newOtp[index] = numericValue;
-      setOtp(newOtp);
+    const newOtp = [...otp];
+    newOtp[index] = numericValue;
+    setOtp(newOtp);
 
-      // Auto-focus next input
-      if (numericValue && index < 5) {
-        inputRefs.current[index + 1]?.focus();
-      }
+    if (numericValue && index < OTP_LENGTH - 1) {
+      inputRefs.current[index + 1]?.focus();
     }
   };
 
@@ -59,35 +60,30 @@ const OtpVerify = () => {
 
   const handlePaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
-    const pastedData = e.clipboardData.getData("text").replace(/[^0-9]/g, "");
+    const pastedData = e.clipboardData.getData("text").replace(/\D/g, "");
 
-    if (pastedData.length === 6) {
-      const newOtp = pastedData.split("");
-      setOtp(newOtp);
-      inputRefs.current[5]?.focus();
+    if (pastedData.length === OTP_LENGTH) {
+      setOtp(pastedData.split(""));
+      inputRefs.current[OTP_LENGTH - 1]?.focus();
     }
   };
 
   const verifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     const otpString = otp.join("");
-    if (otpString.length !== 6) {
+    if (otpString.length !== OTP_LENGTH) {
       toast.error("Please enter a valid OTP");
       return;
     }
-
     setIsLoading(true);
-    const credentials = { otp: otpString, email };
-
     try {
-      const response = await otpvaarify(credentials);
-      toast.success(response.message || "OTP verified successfully!");
+      const response = await otpvaarify({ otp: otpString, email });
+      if (response === 1) {
+        router.push("/login");
+      }
     } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message || "OTP verification failed!";
-      toast.error(errorMessage);
-      setOtp(["", "", "", "", "", ""]);
-      inputRefs.current[0]?.focus();
+      toast.error(error.response?.message || "OTP verification failed!");
+      resetOtp();
     } finally {
       setIsLoading(false);
     }
@@ -98,16 +94,15 @@ const OtpVerify = () => {
     try {
       toast.success("OTP has been resent to your email");
       setTimeLeft(30);
-      setOtp(["", "", "", "", "", ""]);
-      inputRefs.current[0]?.focus();
-    } catch (error) {
+      resetOtp();
+    } catch {
       toast.error("Failed to resend OTP. Please try again.");
     } finally {
       setIsResending(false);
     }
   };
 
-  const isOtpComplete = otp.every((digit) => digit !== "");
+  const isOtpComplete = otp.every(Boolean);
   const maskedEmail = email.replace(/(.{2})(.*)(@.*)/, "$1***$3");
 
   return (
@@ -115,19 +110,11 @@ const OtpVerify = () => {
       <ToastContainer
         position="top-right"
         autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
         theme="light"
         className="mt-16"
       />
 
       <div className="w-full max-w-md">
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full mb-4">
             <Shield className="w-8 h-8 text-white" />
@@ -140,18 +127,13 @@ const OtpVerify = () => {
           </p>
         </div>
 
-        {/* Form Container */}
         <div className="bg-white/70 backdrop-blur-sm shadow-xl rounded-2xl border border-white/20 p-8">
-          {/* Email Display */}
-          <div className="mb-6">
-            <div className="flex items-center justify-center gap-2 p-4 bg-blue-50 rounded-xl border border-blue-100">
-              <Mail className="w-5 h-5 text-blue-600" />
-              <span className="text-blue-800 font-medium">{maskedEmail}</span>
-            </div>
+          <div className="mb-6 flex items-center justify-center gap-2 p-4 bg-blue-50 rounded-xl border border-blue-100">
+            <Mail className="w-5 h-5 text-blue-600" />
+            <span className="text-blue-800 font-medium">{maskedEmail}</span>
           </div>
 
           <form onSubmit={verifyOtp} className="space-y-6">
-            {/* OTP Input */}
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-gray-700 text-center">
                 Enter Verification Code
@@ -160,15 +142,17 @@ const OtpVerify = () => {
                 {otp.map((digit, index) => (
                   <input
                     key={index}
-                    ref={(el) => (inputRefs.current[index] = el)}
+                    ref={(el) => {
+                      if (el) inputRefs.current[index] = el;
+                    }}
                     type="text"
                     inputMode="numeric"
                     maxLength={1}
                     value={digit}
                     onChange={(e) => handleOtpChange(index, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(index, e)}
-                    className="w-12 h-12 text-center text-xl font-bold border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white/50 border-gray-200 hover:border-gray-300"
                     autoComplete="off"
+                    className="w-12 h-12 text-center text-xl font-bold border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/50 border-gray-200 hover:border-gray-300 transition-all duration-200"
                   />
                 ))}
               </div>
@@ -223,7 +207,7 @@ const OtpVerify = () => {
           <div className="text-center mt-6">
             <button
               onClick={() => router.push("/signup")}
-              className="text-gray-600 hover:text-gray-800 text-sm transition-colors duration-200"
+              className="text-blue-400-600 hover:text-gray-800 text-sm transition-colors duration-200"
             >
               Back to Sign Up
             </button>

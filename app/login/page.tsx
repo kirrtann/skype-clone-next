@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ToastContainer } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Eye, EyeOff, Mail, Lock, Loader2 } from "lucide-react";
 import { login } from "@/api/servierce/auth";
 import Link from "next/link";
 import useUser from "../zustand/useUser";
+import CustomInput from "@/components/custominput";
 
 interface LoginFormData {
   email: string;
@@ -84,7 +85,7 @@ export default function Login() {
           router.push("/");
         }, 1000);
       } else {
-        throw new Error("Login failed - invalid credentials");
+        toast.error(response?.message || "Login failed - invalid credentials");
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -101,7 +102,7 @@ export default function Login() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center p-4">
       <ToastContainer
         position="top-right"
-        autoClose={3000}
+        autoClose={2000}
         hideProgressBar={false}
         newestOnTop={false}
         closeOnClick
@@ -130,85 +131,48 @@ export default function Login() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Welcome Back
           </h1>
-          <p className="text-gray-600">Sign in to your Skype account</p>
+          <p className="text-gray-600">Sign in to your Chat account</p>
         </div>
 
         <div className="bg-white shadow-xl text-black rounded-2xl p-8 border border-gray-100">
           <form className="space-y-6" onSubmit={handleSubmit} noValidate>
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-semibold text-gray-700 mb-2"
-              >
-                Email Address
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="email"
-                  id="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                    errors.email
-                      ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                      : "border-gray-300"
-                  }`}
-                  placeholder="Enter your email"
-                  disabled={isLoading}
-                />
-              </div>
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-              )}
-            </div>
+            <CustomInput
+              label="Email Address"
+              type="email"
+              name="email"
+              id="email"
+              placeholder="Enter your email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              leftIcon={<Mail className="h-5 w-5 text-gray-400" />}
+              error={errors.email}
+            />
 
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-semibold text-gray-700 mb-2"
-              >
-                Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  id="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                    errors.password
-                      ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                      : "border-gray-300"
-                  }`}
-                  placeholder="Enter your password"
-                  disabled={isLoading}
-                />
-                <button
-                  type="button"
-                  onClick={togglePasswordVisibility}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  disabled={isLoading}
-                >
+            <CustomInput
+              label="Password"
+              type={showPassword ? "text" : "password"}
+              name="password"
+              id="password"
+              placeholder="Enter your password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              leftIcon={<Lock className="h-5 w-5 text-gray-400" />}
+              rightIcon={
+                <button type="button" onClick={togglePasswordVisibility}>
                   {showPassword ? (
                     <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
                   ) : (
                     <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
                   )}
                 </button>
-              </div>
-              {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password}</p>
-              )}
-            </div>
+              }
+              error={errors.password}
+            />
             <div className="flex justify-end">
               <Link
-                href="/forgot-password"
+                href="forgot-password"
                 className="text-sm text-blue-600 hover:text-blue-800 hover:underline font-medium"
               >
                 Forgot your password?
@@ -236,7 +200,7 @@ export default function Login() {
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="px-2 bg-white text-gray-500">
-                  New to Skype?
+                  New to Chat?
                 </span>
               </div>
             </div>

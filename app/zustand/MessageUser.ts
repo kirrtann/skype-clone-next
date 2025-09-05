@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 
 type UserMessage = {
   id: string;
-  name: string;
+  name?: string;
   email: string;
 };
 
