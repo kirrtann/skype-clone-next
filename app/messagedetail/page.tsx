@@ -45,12 +45,10 @@ const MessageHistory = () => {
   const targetUserId = searchParams.get("id");
   const targetUserName = selectedUser?.name || targetUserId || "Unknown";
 
-  // Scroll to bottom when messages update
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Set room based on sorted user IDs
   useEffect(() => {
     if (currentUserId && targetUserId) {
       const roomId = [currentUserId, targetUserId].sort().join("-");
@@ -58,7 +56,6 @@ const MessageHistory = () => {
     }
   }, [currentUserId, targetUserId]);
 
-  // Initialize socket connection
   useEffect(() => {
     if (!currentUserId || !room) return;
 
@@ -178,7 +175,6 @@ const MessageHistory = () => {
 
   return (
     <div className="flex flex-col h-screen bg-gradient-to-b from-gray-100 to-gray-200">
-      {/* Header */}
       <div className="bg-white shadow-sm p-4 flex items-center gap-3 sticky top-0 z-10">
         <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
           {targetUserName?.charAt(0).toUpperCase()}

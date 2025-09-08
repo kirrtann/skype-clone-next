@@ -1,6 +1,6 @@
 "use client";
 
-import { otpvaarify } from "@/api/servierce/auth";
+import { otpvaarify, resendotp } from "@/api/servierce/auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { toast, ToastContainer } from "react-toastify";
@@ -78,11 +78,12 @@ const OtpVerify = () => {
     setIsLoading(true);
     try {
       const response = await otpvaarify({ otp: otpString, email });
-      if (response === 1) {
+      if (response.status === 1) {
         router.push("/login");
+      } else {
+        toast.error(response?.message || "OTP verification failed!");
       }
-    } catch (error: any) {
-      toast.error(error.response?.message || "OTP verification failed!");
+    } catch {
       resetOtp();
     } finally {
       setIsLoading(false);
@@ -92,8 +93,12 @@ const OtpVerify = () => {
   const handleResendOtp = async () => {
     setIsResending(true);
     try {
-      toast.success("OTP has been resent to your email");
-      setTimeLeft(30);
+      const response = await resendotp(email);
+      if (response === 1) {
+        toast.success("OTP has been resent to your email");
+        setTimeLeft(30);
+      }
+
       resetOtp();
     } catch {
       toast.error("Failed to resend OTP. Please try again.");

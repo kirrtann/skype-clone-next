@@ -103,83 +103,74 @@ export default function SignUp() {
         </div>
         <div className="bg-white/70 backdrop-blur-sm shadow-xl rounded-2xl border border-white/20 p-8">
           <form className="space-y-6" onSubmit={handleSubmit} noValidate>
-            <div className="space-y-2">
-              <CustomInput
-                label="Full Name"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                type="text"
-                placeholder="Enter Your Name"
-                leftIcon={
-                  <User
-                    className={`h-5 w-5 ${
-                      errors.name ? "text-red-400" : "text-gray-400"
-                    }`}
-                  />
-                }
-                error={errors.name}
-              />
-            </div>
-            <div className="space-y-2">
-              <CustomInput
-                label="Email Address"
-                type="email"
-                name="email"
-                id="email"
-                placeholder="Enter your email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                leftIcon={<Mail className="h-5 w-5 text-gray-400" />}
-                error={errors.email}
-              />
-            </div>
-            <div className="space-y-2">
-              <CustomInput
-                label="Password"
-                type={showPassword ? "text" : "password"}
-                name="password"
-                id="password"
-                placeholder="Enter your password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                leftIcon={<Lock className="h-5 w-5 text-gray-400" />}
-                rightIcon={
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                    ) : (
-                      <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                    )}
-                  </button>
-                }
-                error={errors.password}
-              />
-            </div>
-            <div className="space-y-2">
-              <CustomInput
-                label="Date Of Birth"
-                type="date"
-                id="birth_date"
-                value={formData.birth_date}
-                onChange={handleChange}
-                error={errors.birth_date}
-                leftIcon={
-                  <Calendar
-                    className={`h-5 w-5 ${
-                      errors.birth_date ? "text-red-400" : "text-gray-400"
-                    }`}
-                  />
-                }
-              />
-            </div>
-
+            <CustomInput
+              label="Full Name"
+              id="name"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              type="text"
+              placeholder="Enter Your Name"
+              leftIcon={
+                <User
+                  className={`h-5 w-5 ${
+                    errors.name ? "text-red-400" : "text-gray-400"
+                  }`}
+                />
+              }
+              error={errors.name}
+            />
+            <CustomInput
+              label="Email Address"
+              type="email"
+              name="email"
+              id="email"
+              placeholder="Enter your email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              leftIcon={<Mail className="h-5 w-5 text-gray-400" />}
+              error={errors.email}
+            />
+            <CustomInput
+              label="Password"
+              type={showPassword ? "text" : "password"}
+              name="password"
+              id="password"
+              placeholder="Enter your password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              leftIcon={<Lock className="h-5 w-5 text-gray-400" />}
+              rightIcon={
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  )}
+                </button>
+              }
+              error={errors.password}
+            />
+            <CustomInput
+              label="Date Of Birth"
+              type="date"
+              id="birth_date"
+              value={formData.birth_date}
+              onChange={handleChange}
+              error={errors.birth_date}
+              leftIcon={
+                <Calendar
+                  className={`h-5 w-5 ${
+                    errors.birth_date ? "text-red-400" : "text-gray-400"
+                  }`}
+                />
+              }
+            />
             <button
               type="submit"
               disabled={isLoading}
