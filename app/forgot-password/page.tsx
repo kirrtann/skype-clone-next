@@ -6,7 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 import Link from "next/link";
 import { Mail, KeyRound } from "lucide-react";
 import { forgotPassword, verifyForgotPasswordOtp } from "@/api/servierce/auth";
-import CustomInput from "@/components/custominput";
+import CustomInput from "@/app/components/custominput";
 
 export default function ForgotPassword() {
   const router = useRouter();

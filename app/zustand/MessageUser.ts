@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 type UserMessage = {
   id: string;
   name?: string;
-  email: string;
+  email?: string;
 };
 
 type MessageDetailStore = {

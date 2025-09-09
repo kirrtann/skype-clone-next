@@ -1,4 +1,3 @@
-// src/api/axiosInstance.ts
 import { BASE_URL } from "@/constant";
 import axios from "axios";
 

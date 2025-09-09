@@ -6,8 +6,8 @@ import "react-toastify/dist/ReactToastify.css";
 import { signup } from "@/api/servierce/auth";
 import Link from "next/link";
 import { Eye, EyeOff, User, Mail, Calendar, Lock } from "lucide-react";
-import CustomInput from "@/components/custominput";
-import validateFields from "@/components/forminputerror";
+import CustomInput from "@/app/components/custominput";
+import validateFields from "@/app/components/forminputerror";
 
 interface ValidationErrors {
   email?: string;

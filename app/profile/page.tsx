@@ -16,7 +16,6 @@ const Profile = () => {
           <h2 className="mt-3 text-2xl font-semibold text-gray-800">
             {userdata.name}
           </h2>
-          <p className="text-sm text-gray-500">User ID: {userdata.id}</p>
         </div>
         <div className="mt-6 space-y-4">
           <div className="flex items-center space-x-3">
@@ -26,10 +25,6 @@ const Profile = () => {
           <div className="flex items-center space-x-3">
             <span className="w-5 h-5 text-green-500">📅</span>
             <span className="text-gray-700">{userdata.birth_date}</span>
-          </div>
-          <div className="flex items-center space-x-3">
-            <span className="w-5 h-5 text-purple-500">🆔</span>
-            <span className="text-gray-700">{userdata.id}</span>
           </div>
         </div>
       </div>

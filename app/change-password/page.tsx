@@ -5,7 +5,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { resetPassword } from "@/api/servierce/auth";
 import { type FC } from "react";
-import CustomInput from "@/components/custominput";
+import CustomInput from "@/app/components/custominput";
 import { Eye, EyeOff } from "lucide-react";
 
 const ChangePassword: FC = () => {

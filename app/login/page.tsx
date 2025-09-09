@@ -8,7 +8,7 @@ import { Eye, EyeOff, Mail, Lock, Loader2 } from "lucide-react";
 import { login } from "@/api/servierce/auth";
 import Link from "next/link";
 import useUser from "../zustand/useUser";
-import CustomInput from "@/components/custominput";
+import CustomInput from "@/app/components/custominput";
 
 interface LoginFormData {
   email: string;
@@ -36,19 +36,6 @@ export default function Login() {
 
   const validateForm = (): boolean => {
     const newErrors: Partial<LoginFormData> = {};
-
-    if (!formData.email) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email";
-    }
-
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -77,6 +64,8 @@ export default function Login() {
           name: response?.data?.name,
           token: response?.data?.token,
         };
+        console.log(user);
+
         setUser(user);
         localStorage.setItem("name", user.name || "");
         localStorage.setItem("token", user.token);
