@@ -47,3 +47,7 @@ export const resetPassword = async (data: {
 export const resendotp = async (email: string) => {
   return apiHelper(axiosInstance.put("/auth/resend-otp", { email }));
 };
+
+export const logout = async () => {
+  return apiHelper(axiosInstance.get("/auth/logout"));
+};

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { resetPassword } from "@/api/servierce/auth";
 import { type FC } from "react";
@@ -38,14 +38,16 @@ const ChangePassword: FC = () => {
 
     setLoading(true);
     try {
-      await resetPassword({
+      const response = await resetPassword({
         email,
         newPassword: passwords.newPassword,
       });
-
-      toast.success("Password changed successfully!", {
-        onClose: () => router.push("/login"),
-      });
+      if (response.status === 1) {
+        toast.success("Password changed successfully!");
+        router.push("/login");
+      } else {
+        toast.error(response.message || "Password not change");
+      }
     } catch (error) {
       console.error("Failed to change password. Please try again.", error);
     } finally {
@@ -55,7 +57,6 @@ const ChangePassword: FC = () => {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <ToastContainer />
       <div className="w-full max-w-md bg-white shadow-lg rounded-2xl p-8">
         <h2 className="text-2xl font-semibold text-center text-gray-800 mb-6">
           Change Password
